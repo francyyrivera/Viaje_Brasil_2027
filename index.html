@@ -44,6 +44,11 @@ ul{padding-left:1.2em;margin:.4em 0}
 .who{color:var(--mute);font-size:.88rem}
 .bar{display:grid;grid-template-columns:24px 1fr 80px;gap:10px;align-items:center;margin:6px 0}
 .track{background:var(--chip);border-radius:8px;height:16px;overflow:hidden}.fill{background:var(--acc);height:100%;transition:width .3s}
+.auth{display:grid;gap:8px;max-width:420px}
+.auth input{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.auth .row{display:flex;gap:8px;flex-wrap:wrap}
+.link{background:none;border:0;color:var(--ink);text-decoration:underline;cursor:pointer;font:inherit;padding:0}
+.err{color:var(--warn);font-size:.9rem;min-height:1.2em}
 </style>
 </head>
 <body>
@@ -54,6 +59,7 @@ ul{padding-left:1.2em;margin:.4em 0}
 
 <h2>📊 Votación en vivo</h2>
 <div class="card" id="results"></div>
+<div class="card" id="authbox"></div>
 <p class="sub" id="voteinfo">Cargando votación…</p>
 
 <h2>🗳️ Las opciones</h2>
@@ -131,68 +137,109 @@ ul{padding-left:1.2em;margin:.4em 0}
 <h2>🙋 Cómo votamos</h2>
 <p class="note">Toca “Votar” en la opción que prefieras; el conteo se ve arriba. Si les importa más el precio: B o D. Más tranquilidad: A o D. Lagunas en su mejor época: E (la segunda más cara, ≈ $3 M).</p>
 </main>
-<script>
-(function(){
-var cards=[].slice.call(document.querySelectorAll('.card')).filter(function(c){return c.querySelector('.letter')});
-var info=document.getElementById('voteinfo'),res=document.getElementById('results');
-var state={votes:{},me:null,names:{},ready:false,db:null,user:null},rows={};
-cards.forEach(function(c){var L=c.querySelector('.letter').textContent.trim();var d=document.createElement('div');d.className='vote';c.appendChild(d);rows[L]=d;});
-var letters=Object.keys(rows);
-function setInfo(t){info.textContent=t}
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,updateProfile,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,collection,doc,setDoc,deleteDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ====== PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE ======
+const firebaseConfig = {
+  apiKey: "REEMPLAZAR",
+  authDomain: "REEMPLAZAR",
+  projectId: "REEMPLAZAR",
+  appId: "REEMPLAZAR"
+};
+// =====================================================
+
+const info=document.getElementById('voteinfo'),res=document.getElementById('results'),box=document.getElementById('authbox');
+const cards=[...document.querySelectorAll('.card')].filter(c=>c.querySelector('.letter'));
+const rows={};cards.forEach(c=>{const L=c.querySelector('.letter').textContent.trim();const d=document.createElement('div');d.className='vote';c.appendChild(d);rows[L]=d});
+const letters=Object.keys(rows);
+const state={votes:{},user:null,ready:false};
+let auth,db,mode='signup';
+const setInfo=t=>info.textContent=t;
+
+function el(tag,props={},...kids){const e=document.createElement(tag);Object.assign(e,props);kids.forEach(k=>e.append(k));return e}
+
+function renderAuth(){
+  box.replaceChildren();
+  if(state.user){
+    box.append(el('p',{textContent:'👤 Sesión iniciada como '+(state.user.displayName||state.user.email)}),
+      el('button',{className:'btn',textContent:'Cerrar sesión',onclick:()=>signOut(auth)}));
+    return;
+  }
+  const f=el('div',{className:'auth'});
+  const name=el('input',{placeholder:'Tu nombre',autocomplete:'name'});
+  const email=el('input',{type:'email',placeholder:'Correo',autocomplete:'email'});
+  const pass=el('input',{type:'password',placeholder:'Contraseña (mín. 6 caracteres)',autocomplete:mode==='signup'?'new-password':'current-password'});
+  const err=el('div',{className:'err'});
+  const go=el('button',{className:'btn',textContent:mode==='signup'?'Crear cuenta y entrar':'Ingresar'});
+  const sw=el('button',{className:'link',textContent:mode==='signup'?'¿Ya tienes cuenta? Ingresa':'¿Primera vez? Regístrate',onclick:()=>{mode=mode==='signup'?'login':'signup';renderAuth()}});
+  go.onclick=async()=>{
+    err.textContent='';
+    try{
+      if(mode==='signup'){
+        if(!name.value.trim()){err.textContent='Escribe tu nombre.';return}
+        const c=await createUserWithEmailAndPassword(auth,email.value.trim(),pass.value);
+        await updateProfile(c.user,{displayName:name.value.trim().slice(0,50)});
+        state.user=auth.currentUser;renderAuth();render();
+      }else{
+        await signInWithEmailAndPassword(auth,email.value.trim(),pass.value);
+      }
+    }catch(e){
+      const m={'auth/email-already-in-use':'Ese correo ya tiene cuenta. Ingresa.','auth/weak-password':'La contraseña es muy corta.','auth/invalid-email':'Correo no válido.','auth/invalid-credential':'Correo o contraseña incorrectos.'};
+      err.textContent=m[e.code]||'No se pudo continuar. Intenta de nuevo.';
+    }
+  };
+  if(mode==='signup')f.append(name);
+  f.append(email,pass,err,el('div',{className:'row'},go,sw));
+  box.append(el('p',{textContent:'Para votar, crea tu cuenta o ingresa:'}),f);
+}
+
 function render(){
- var counts={};letters.forEach(function(l){counts[l]=[]});
- Object.keys(state.votes).forEach(function(id){var v=state.votes[id];if(v&&counts[v.choice])counts[v.choice].push(id)});
- var total=0,max=1;letters.forEach(function(l){total+=counts[l].length;max=Math.max(max,counts[l].length)});
- res.replaceChildren();
- letters.forEach(function(l){
-  var n=counts[l].length;
-  var r=document.createElement('div');r.className='bar';
-  var lab=document.createElement('b');lab.textContent=l;
-  var tr=document.createElement('div');tr.className='track';
-  var f=document.createElement('div');f.className='fill';f.style.width=(n/max*100)+'%';tr.appendChild(f);
-  var num=document.createElement('span');num.textContent=n+(n===1?' voto':' votos');
-  r.appendChild(lab);r.appendChild(tr);r.appendChild(num);res.appendChild(r);
-  var row=rows[l];row.replaceChildren();
-  var mine=!!(state.votes[state.me]&&state.votes[state.me].choice===l);
-  var b=document.createElement('button');b.className=mine?'btn on':'btn';
-  b.textContent=mine?'✅ Tu voto (toca para quitar)':'🗳️ Votar por '+l;
-  b.disabled=!state.ready;b.onclick=function(){castVote(l,mine)};
-  var w=document.createElement('span');w.className='who';
-  w.textContent=n?counts[l].map(function(id){return state.names[id]||(id===state.me?'Tú':'Alguien')}).join(', '):'Sin votos todavía';
-  row.appendChild(b);row.appendChild(w);
- });
- var t=document.createElement('p');t.className='sub';t.textContent='Total: '+total+(total===1?' voto':' votos');res.appendChild(t);
+  const counts={};letters.forEach(l=>counts[l]=[]);
+  Object.values(state.votes).forEach(v=>{if(counts[v.choice])counts[v.choice].push(v)});
+  let total=0,max=1;letters.forEach(l=>{total+=counts[l].length;max=Math.max(max,counts[l].length)});
+  res.replaceChildren();
+  const myId=state.user&&state.user.uid;
+  letters.forEach(l=>{
+    const n=counts[l].length;
+    const fill=el('div',{className:'fill'});fill.style.width=(n/max*100)+'%';
+    res.append(el('div',{className:'bar'},el('b',{textContent:l}),el('div',{className:'track'},fill),el('span',{textContent:n+(n===1?' voto':' votos')})));
+    const mine=!!(myId&&state.votes[myId]&&state.votes[myId].choice===l);
+    const b=el('button',{className:mine?'btn on':'btn',textContent:mine?'✅ Tu voto (toca para quitar)':'🗳️ Votar por '+l,disabled:!state.user||!state.ready,onclick:()=>castVote(l,mine)});
+    const who=el('span',{className:'who',textContent:n?counts[l].map(v=>v.name||'Alguien').join(', '):'Sin votos todavía'});
+    rows[l].replaceChildren(b,who);
+  });
+  res.append(el('p',{className:'sub',textContent:'Total: '+total+(total===1?' voto':' votos')}));
 }
-function resolveNames(){
- var ids=Object.keys(state.votes).filter(function(id){return !(id in state.names)});
- if(!ids.length||!state.user)return;
- ids.forEach(function(id){state.names[id]=''});
- state.user.profiles(ids).then(function(ps){ids.forEach(function(id){state.names[id]=(ps[id]&&ps[id].name)||''});render()}).catch(function(){});
+
+async function castVote(l,mine){
+  const u=state.user;if(!u)return;
+  const ref=doc(db,'votes',u.uid);
+  try{
+    if(mine)await deleteDoc(ref);
+    else await setDoc(ref,{choice:l,name:(u.displayName||'Anónimo').slice(0,50),at:Date.now()});
+  }catch(e){setInfo('No se pudo guardar tu voto. Intenta de nuevo.')}
 }
-function castVote(l,mine){
- if(!state.ready)return;
- var ref=state.db.doc('votes/'+state.me);
- var p=mine?ref.delete():ref.set({choice:l,at:Date.now()});
- p.catch(function(){setInfo('No se pudo guardar tu voto. Pide a quien compartió el enlace que te dé permiso de Colaborador.')});
+
+renderAuth();render();
+if(firebaseConfig.apiKey==='REEMPLAZAR'){
+  setInfo('⚙️ Falta pegar la configuración de Firebase en el código (ver instrucciones).');
+}else{
+  const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);
+  let unsub=null;
+  onAuthStateChanged(auth,u=>{
+    state.user=u;renderAuth();
+    if(unsub){unsub();unsub=null}
+    state.votes={};state.ready=false;
+    if(!u){setInfo('Crea tu cuenta o ingresa para votar y ver los votos.');render();return}
+    unsub=onSnapshot(collection(db,'votes'),snap=>{
+      state.votes={};snap.forEach(d=>{state.votes[d.id]=d.data()});
+      state.ready=true;setInfo('Toca el botón de tu opción. Solo cuenta un voto por persona; puedes cambiarlo o quitarlo.');render();
+    },()=>setInfo('No se pudo leer la votación.'));
+  });
 }
-render();
-if(!window.claude){setInfo('Abre esta página en Claude para poder votar.');return;}
-var timer=setTimeout(function(){setInfo('No se pudo cargar la votación. Abre el enlace con tu sesión de Claude iniciada.')},10000);
-Promise.all([claude.use('db'),claude.use('user')]).then(function(r){
- var db=r[0],user=r[1];
- if(!db||!user){clearTimeout(timer);setInfo('Inicia sesión en Claude para votar.');return;}
- state.db=db;state.user=user;
- return user.id().then(function(id){
-  state.me=id;
-  db.collection('votes').onSnapshot(function(snap){
-   clearTimeout(timer);state.ready=true;
-   setInfo('Toca el botón de tu opción. Puedes cambiar o quitar tu voto cuando quieras.');
-   state.votes={};snap.docs.forEach(function(d){if(d.exists)state.votes[d.id]=d.data()});
-   render();resolveNames();
-  },function(){clearTimeout(timer);setInfo('No se pudo leer la votación.')});
- });
-}).catch(function(){clearTimeout(timer);setInfo('No se pudo cargar la votación.')});
-})();
 </script>
 </body>
 </html>
