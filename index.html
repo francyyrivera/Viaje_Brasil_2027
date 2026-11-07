@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vuelos Brasil 2027 – Opciones para votar</title>
+<style>
+:root{--bg:#fff8e6;--card:#ffffff;--ink:#14316f;--mute:#5a6785;--line:#e6dcc0;--acc:#f5b800;--ok:#0b8f3c;--warn:#c2410c;--chip:#eef2ff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1b3d;--card:#172856;--ink:#fff3c4;--mute:#aab6d6;--line:#2c3f7a;--acc:#ffd23f;--ok:#4ade80;--warn:#fb923c;--chip:#223472}}
+:root[data-theme="dark"]{--bg:#0f1b3d;--card:#172856;--ink:#fff3c4;--mute:#aab6d6;--line:#2c3f7a;--acc:#ffd23f;--ok:#4ade80;--warn:#fb923c;--chip:#223472}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.7rem;margin:.2em 0}
+h2{font-size:1.2rem;margin:1.8em 0 .6em}
+.sub{color:var(--mute);margin:0 0 14px}
+.note{background:var(--chip);border-radius:12px;padding:10px 14px;font-size:.92rem}
+.grid{display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.head{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.letter{background:var(--acc);color:#14316f;font-weight:800;font-size:1.3rem;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex:none}
+.head h3{margin:0;font-size:1.05rem}
+.head small{color:var(--mute)}
+.leg{display:grid;grid-template-columns:92px 1fr auto;gap:8px;padding:8px 0;border-top:1px dashed var(--line);font-size:.92rem}
+.leg b{display:block}
+.leg span{color:var(--mute);font-size:.85rem}
+.price{font-weight:700;white-space:nowrap}
+.total{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;padding-top:10px;border-top:2px solid var(--line)}
+.total strong{font-size:1.4rem}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{font-size:.8rem;border-radius:999px;padding:3px 10px;background:var(--chip)}
+.tag.ok{color:var(--ok)}.tag.warn{color:var(--warn)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:520px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:600}
+ul{padding-left:1.2em;margin:.4em 0}
+@media (max-width:520px){.leg{grid-template-columns:1fr auto}.leg>div:first-child{grid-column:1/3}}
+.vote{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;padding-top:12px;border-top:2px solid var(--line)}
+.btn{font:inherit;font-weight:700;border:0;border-radius:12px;padding:10px 16px;background:var(--acc);color:#14316f;cursor:pointer}
+.btn.on{background:var(--ok);color:#fff}.btn:disabled{opacity:.5;cursor:not-allowed}
+.who{color:var(--mute);font-size:.88rem}
+.bar{display:grid;grid-template-columns:24px 1fr 80px;gap:10px;align-items:center;margin:6px 0}
+.track{background:var(--chip);border-radius:8px;height:16px;overflow:hidden}.fill{background:var(--acc);height:100%;transition:width .3s}
+</style>
+</head>
+<body>
+<main>
+<h1>✈️ Vuelos a Brasil 2027</h1>
+<p class="sub">Resumen para votar · Bogotá → São Luís → Río de Janeiro → Bogotá</p>
+<p class="note">Precios en COP, <b>por persona</b>, cada tramo solo ida, tomados de las capturas de Google Flights. Pueden cambiar al comprar. Las horas son locales (Brasil va 2 h adelante de Colombia).</p>
+
+<h2>📊 Votación en vivo</h2>
+<div class="card" id="results"></div>
+<p class="sub" id="voteinfo">Cargando votación…</p>
+
+<h2>🗳️ Las opciones</h2>
+<div class="grid">
+
+<div class="card">
+<div class="head"><div class="letter">A</div><div><h3>Salida 22 mayo · Una sola reserva a São Luís</h3><small>Segura, sin riesgo de perder conexión en el tramo largo</small></div></div>
+<div class="leg"><div><b>Sáb 22 may</b></div><div><b>Bogotá → São Luís</b><span>LATAM · 8:10 a. m. – 11:10 p. m. · 13 h · escala São Paulo 3 h 10</span></div><div class="price">$1.830.000</div></div>
+<div class="leg"><div><b>Mar 25 may</b></div><div><b>São Luís → Río</b><span>GOL · 5:15 p. m. – 10:15 p. m. · 5 h · escala Brasilia 45 min</span></div><div class="price">$365.000</div></div>
+<div class="leg"><div><b>Vie 28 / Sáb 29 may</b></div><div><b>Río → Bogotá</b><span>LATAM · ej. 4:15 a. m. – 12:05 p. m. · ~10 h · escala São Paulo</span></div><div class="price">$730.000</div></div>
+<div class="total"><span>Total</span><strong>≈ $2.925.000</strong></div>
+<div class="tags"><span class="tag ok">Más tranquila</span><span class="tag">3 noches en São Luís, 3–4 en Río</span><span class="tag">Llegada a São Luís 11 p. m.</span></div>
+</div>
+
+<div class="card">
+<div class="head"><div class="letter">B</div><div><h3>Salida 22 mayo · Bogotá–São Luís por separado</h3><small>La más barata de las de ruta completa</small></div></div>
+<div class="leg"><div><b>Sáb 22 may</b></div><div><b>Bogotá → São Paulo</b><span>LATAM directo · 8:10 a. m. – 4:35 p. m. · 6 h 25</span></div><div class="price">$1.412.090</div></div>
+<div class="leg"><div><b>Sáb 22 may</b></div><div><b>São Paulo → São Luís</b><span>GOL directo · 11:10 p. m. – 2:35 a. m. (+1) · 3 h 25 · espera 6 h 35 en el aeropuerto</span></div><div class="price">$251.179</div></div>
+<div class="leg"><div><b>Mar 25 may</b></div><div><b>São Luís → Río</b><span>GOL · 5:15 p. m. – 10:15 p. m. · 5 h</span></div><div class="price">$365.000</div></div>
+<div class="leg"><div><b>Vie 28 / Sáb 29 may</b></div><div><b>Río → Bogotá</b><span>LATAM · ~10 h · escala São Paulo</span></div><div class="price">$730.000</div></div>
+<div class="total"><span>Total</span><strong>≈ $2.765.000</strong></div>
+<div class="tags"><span class="tag ok">Ahorra ~$160.000 vs A</span><span class="tag warn">Dos tiquetes: si el 1.º se retrasa, se pierde el 2.º</span><span class="tag warn">Llegada 2:35 a. m. · ~16 h</span></div>
+</div>
+
+<div class="card">
+<div class="head"><div class="letter">C</div><div><h3>Salida 22 mayo · Río primero</h3><small>Bogotá → Río → São Luís → Bogotá</small></div></div>
+<div class="leg"><div><b>Sáb 22 may</b></div><div><b>Bogotá → Río</b><span>LATAM · 4:50 a. m. – 4:40 p. m. · 9 h 50 · escala Lima 1 h 20</span></div><div class="price">$1.490.000</div></div>
+<div class="leg"><div><b>Mié 26 may</b></div><div><b>Río → São Luís</b><span>GOL · 8:50 p. m. – 2:35 a. m. (+1) · 5 h 45 · escala São Paulo 1 h</span></div><div class="price">$430.000</div></div>
+<div class="leg"><div><b>Sáb 29 may</b></div><div><b>São Luís → Bogotá</b><span>LATAM · 5:15 p. m. – 4:10 a. m. (+1) · 12 h 55 · escala São Paulo 3 h</span></div><div class="price">$1.470.000</div></div>
+<div class="total"><span>Total</span><strong>≈ $3.400.000</strong></div>
+<div class="tags"><span class="tag warn">La más cara (~$475.000 más que A)</span><span class="tag">4 noches en Río, 3 en São Luís</span></div>
+</div>
+
+<div class="card">
+<div class="head"><div class="letter">D</div><div><h3>Salida 29 mayo · Una sola reserva a São Luís</h3><small>Viaje una semana después, regreso a inicios de junio</small></div></div>
+<div class="leg"><div><b>Sáb 29 may</b></div><div><b>Bogotá → São Luís</b><span>LATAM · 8:10 a. m. – 11:10 p. m. · 13 h · escala São Paulo</span></div><div class="price">$1.816.490</div></div>
+<div class="leg"><div><b>Mar 1 jun</b></div><div><b>São Luís → Río</b><span>GOL · 5:15 p. m. – 10:15 p. m. · 5 h · escala Brasilia 45 min</span></div><div class="price">$316.965</div></div>
+<div class="leg"><div><b>Vie 4 / Sáb 5 jun</b></div><div><b>Río → Bogotá</b><span>LATAM · 4:40 a. m. – 12:05 p. m. · 9 h 25 · escala São Paulo</span></div><div class="price">$745.791</div></div>
+<div class="total"><span>Total</span><strong>≈ $2.880.000</strong></div>
+<div class="tags"><span class="tag ok">~$45.000 menos que A</span><span class="tag">Regreso con escala en Lima: ~$24.000 menos, 11–12 h</span></div>
+</div>
+
+<div class="card">
+<div class="head"><div class="letter">E</div><div><h3>Salida 3 o 10 julio · Temporada de lagunas 💦</h3><small>Mejor época para las lagunas</small></div></div>
+<div class="leg"><div><b>Sáb 3 / 10 jul</b></div><div><b>Bogotá → São Luís</b><span>LATAM · una reserva · 13 h</span></div><div class="price">$1.816.490</div></div>
+<div class="leg"><div><b>Mar 13 jul</b></div><div><b>São Luís → Río</b><span>Azul 2:35 a. m. – 7:40 a. m. (1 escala, $417.079) o LATAM directo 11:55 p. m. – 3:20 a. m. (+1) ($448.394)</span></div><div class="price">$417.000–448.000</div></div>
+<div class="leg"><div><b>Fecha por definir</b></div><div><b>Río → Bogotá</b><span>Precio de referencia para julio</span></div><div class="price">$750.000</div></div>
+<div class="total"><span>Total</span><strong>≈ $2.984.000–3.015.000</strong></div>
+<div class="tags"><span class="tag ok">Una reserva sale más barata que separado en julio</span><span class="tag">$2.984.000 con Azul · $3.015.000 con LATAM directo</span></div>
+</div>
+
+</div>
+
+<h2>💰 Bogotá → São Luís: ¿una reserva o por separado?</h2>
+<div class="card scroll">
+<table>
+<tr><th>Fecha</th><th>Por separado</th><th>Una reserva</th><th>Conviene</th></tr>
+<tr><td>22 mayo</td><td>$1.560.000 (3 escalas, 18 h) · $1.670.000 (16 h)</td><td>$1.816.490</td><td>Separado ahorra $146.000–256.000</td></tr>
+<tr><td>29 mayo</td><td>$1.810.000</td><td>$1.816.490</td><td>Empate (solo $6.490)</td></tr>
+<tr><td>3 julio</td><td>$1.950.000</td><td>$1.816.490</td><td>Una reserva (−$133.510)</td></tr>
+<tr><td>10 julio</td><td>$1.995.000</td><td>$1.816.490</td><td>Una reserva (−$178.510)</td></tr>
+</table>
+</div>
+
+<h2>⚠️ Por revisar antes de comprar</h2>
+<div class="card">
+<ul>
+<li>Confirmar que el equipaje esté incluido y la tarifa siga vigente.</li>
+<li>Con tiquetes separados, la aerolínea no protege la conexión si hay retrasos; puede implicar migración y recoger maletas.</li>
+<li>En la presentación, algunos días aparecen como “martes” pero son viernes o sábados (28/29 de mayo y 4/5 de junio). Verificar fechas exactas al comprar.</li>
+<li>En la opción E, el regreso Río → Bogotá ($750.000) es un valor de referencia: confirmar fecha y horario exactos.</li>
+</ul>
+</div>
+
+<h2>🙋 Cómo votamos</h2>
+<p class="note">Toca “Votar” en la opción que prefieras; el conteo se ve arriba. Si les importa más el precio: B o D. Más tranquilidad: A o D. Lagunas en su mejor época: E (la segunda más cara, ≈ $3 M).</p>
+</main>
+<script>
+(function(){
+var cards=[].slice.call(document.querySelectorAll('.card')).filter(function(c){return c.querySelector('.letter')});
+var info=document.getElementById('voteinfo'),res=document.getElementById('results');
+var state={votes:{},me:null,names:{},ready:false,db:null,user:null},rows={};
+cards.forEach(function(c){var L=c.querySelector('.letter').textContent.trim();var d=document.createElement('div');d.className='vote';c.appendChild(d);rows[L]=d;});
+var letters=Object.keys(rows);
+function setInfo(t){info.textContent=t}
+function render(){
+ var counts={};letters.forEach(function(l){counts[l]=[]});
+ Object.keys(state.votes).forEach(function(id){var v=state.votes[id];if(v&&counts[v.choice])counts[v.choice].push(id)});
+ var total=0,max=1;letters.forEach(function(l){total+=counts[l].length;max=Math.max(max,counts[l].length)});
+ res.replaceChildren();
+ letters.forEach(function(l){
+  var n=counts[l].length;
+  var r=document.createElement('div');r.className='bar';
+  var lab=document.createElement('b');lab.textContent=l;
+  var tr=document.createElement('div');tr.className='track';
+  var f=document.createElement('div');f.className='fill';f.style.width=(n/max*100)+'%';tr.appendChild(f);
+  var num=document.createElement('span');num.textContent=n+(n===1?' voto':' votos');
+  r.appendChild(lab);r.appendChild(tr);r.appendChild(num);res.appendChild(r);
+  var row=rows[l];row.replaceChildren();
+  var mine=!!(state.votes[state.me]&&state.votes[state.me].choice===l);
+  var b=document.createElement('button');b.className=mine?'btn on':'btn';
+  b.textContent=mine?'✅ Tu voto (toca para quitar)':'🗳️ Votar por '+l;
+  b.disabled=!state.ready;b.onclick=function(){castVote(l,mine)};
+  var w=document.createElement('span');w.className='who';
+  w.textContent=n?counts[l].map(function(id){return state.names[id]||(id===state.me?'Tú':'Alguien')}).join(', '):'Sin votos todavía';
+  row.appendChild(b);row.appendChild(w);
+ });
+ var t=document.createElement('p');t.className='sub';t.textContent='Total: '+total+(total===1?' voto':' votos');res.appendChild(t);
+}
+function resolveNames(){
+ var ids=Object.keys(state.votes).filter(function(id){return !(id in state.names)});
+ if(!ids.length||!state.user)return;
+ ids.forEach(function(id){state.names[id]=''});
+ state.user.profiles(ids).then(function(ps){ids.forEach(function(id){state.names[id]=(ps[id]&&ps[id].name)||''});render()}).catch(function(){});
+}
+function castVote(l,mine){
+ if(!state.ready)return;
+ var ref=state.db.doc('votes/'+state.me);
+ var p=mine?ref.delete():ref.set({choice:l,at:Date.now()});
+ p.catch(function(){setInfo('No se pudo guardar tu voto. Pide a quien compartió el enlace que te dé permiso de Colaborador.')});
+}
+render();
+if(!window.claude){setInfo('Abre esta página en Claude para poder votar.');return;}
+var timer=setTimeout(function(){setInfo('No se pudo cargar la votación. Abre el enlace con tu sesión de Claude iniciada.')},10000);
+Promise.all([claude.use('db'),claude.use('user')]).then(function(r){
+ var db=r[0],user=r[1];
+ if(!db||!user){clearTimeout(timer);setInfo('Inicia sesión en Claude para votar.');return;}
+ state.db=db;state.user=user;
+ return user.id().then(function(id){
+  state.me=id;
+  db.collection('votes').onSnapshot(function(snap){
+   clearTimeout(timer);state.ready=true;
+   setInfo('Toca el botón de tu opción. Puedes cambiar o quitar tu voto cuando quieras.');
+   state.votes={};snap.docs.forEach(function(d){if(d.exists)state.votes[d.id]=d.data()});
+   render();resolveNames();
+  },function(){clearTimeout(timer);setInfo('No se pudo leer la votación.')});
+ });
+}).catch(function(){clearTimeout(timer);setInfo('No se pudo cargar la votación.')});
+})();
+</script>
+</body>
+</html>
