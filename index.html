@@ -38,17 +38,6 @@ th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}
 th{color:var(--mute);font-weight:600}
 ul{padding-left:1.2em;margin:.4em 0}
 @media (max-width:520px){.leg{grid-template-columns:1fr auto}.leg>div:first-child{grid-column:1/3}}
-.vote{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;padding-top:12px;border-top:2px solid var(--line)}
-.btn{font:inherit;font-weight:700;border:0;border-radius:12px;padding:10px 16px;background:var(--acc);color:#14316f;cursor:pointer}
-.btn.on{background:var(--ok);color:#fff}.btn:disabled{opacity:.5;cursor:not-allowed}
-.who{color:var(--mute);font-size:.88rem}
-.bar{display:grid;grid-template-columns:24px 1fr 80px;gap:10px;align-items:center;margin:6px 0}
-.track{background:var(--chip);border-radius:8px;height:16px;overflow:hidden}.fill{background:var(--acc);height:100%;transition:width .3s}
-.auth{display:grid;gap:8px;max-width:420px}
-.auth input{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
-.auth .row{display:flex;gap:8px;flex-wrap:wrap}
-.link{background:none;border:0;color:var(--ink);text-decoration:underline;cursor:pointer;font:inherit;padding:0}
-.err{color:var(--warn);font-size:.9rem;min-height:1.2em}
 </style>
 </head>
 <body>
@@ -56,11 +45,6 @@ ul{padding-left:1.2em;margin:.4em 0}
 <h1>✈️ Vuelos a Brasil 2027</h1>
 <p class="sub">Resumen para votar · Bogotá → São Luís → Río de Janeiro → Bogotá</p>
 <p class="note">Precios en COP, <b>por persona</b>, cada tramo solo ida, tomados de las capturas de Google Flights. Pueden cambiar al comprar. Las horas son locales (Brasil va 2 h adelante de Colombia).</p>
-
-<h2>📊 Votación en vivo</h2>
-<div class="card" id="results"></div>
-<div class="card" id="authbox"></div>
-<p class="sub" id="voteinfo">Cargando votación…</p>
 
 <h2>🗳️ Las opciones</h2>
 <div class="grid">
@@ -135,111 +119,7 @@ ul{padding-left:1.2em;margin:.4em 0}
 </div>
 
 <h2>🙋 Cómo votamos</h2>
-<p class="note">Toca “Votar” en la opción que prefieras; el conteo se ve arriba. Si les importa más el precio: B o D. Más tranquilidad: A o D. Lagunas en su mejor época: E (la segunda más cara, ≈ $3 M).</p>
+<p class="note">Respondan en el chat del grupo con la letra de su opción (A, B, C, D o E). Si les importa más el precio: B o D. Más tranquilidad: A o D. Lagunas en su mejor época: E (la segunda más cara, ≈ $3 M).</p>
 </main>
-<script type="module">
-import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,updateProfile,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {getFirestore,collection,doc,setDoc,deleteDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-// ====== PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE ======
-const firebaseConfig = {
-  apiKey: "REEMPLAZAR",
-  authDomain: "REEMPLAZAR",
-  projectId: "REEMPLAZAR",
-  appId: "REEMPLAZAR"
-};
-// =====================================================
-
-const info=document.getElementById('voteinfo'),res=document.getElementById('results'),box=document.getElementById('authbox');
-const cards=[...document.querySelectorAll('.card')].filter(c=>c.querySelector('.letter'));
-const rows={};cards.forEach(c=>{const L=c.querySelector('.letter').textContent.trim();const d=document.createElement('div');d.className='vote';c.appendChild(d);rows[L]=d});
-const letters=Object.keys(rows);
-const state={votes:{},user:null,ready:false};
-let auth,db,mode='signup';
-const setInfo=t=>info.textContent=t;
-
-function el(tag,props={},...kids){const e=document.createElement(tag);Object.assign(e,props);kids.forEach(k=>e.append(k));return e}
-
-function renderAuth(){
-  box.replaceChildren();
-  if(state.user){
-    box.append(el('p',{textContent:'👤 Sesión iniciada como '+(state.user.displayName||state.user.email)}),
-      el('button',{className:'btn',textContent:'Cerrar sesión',onclick:()=>signOut(auth)}));
-    return;
-  }
-  const f=el('div',{className:'auth'});
-  const name=el('input',{placeholder:'Tu nombre',autocomplete:'name'});
-  const email=el('input',{type:'email',placeholder:'Correo',autocomplete:'email'});
-  const pass=el('input',{type:'password',placeholder:'Contraseña (mín. 6 caracteres)',autocomplete:mode==='signup'?'new-password':'current-password'});
-  const err=el('div',{className:'err'});
-  const go=el('button',{className:'btn',textContent:mode==='signup'?'Crear cuenta y entrar':'Ingresar'});
-  const sw=el('button',{className:'link',textContent:mode==='signup'?'¿Ya tienes cuenta? Ingresa':'¿Primera vez? Regístrate',onclick:()=>{mode=mode==='signup'?'login':'signup';renderAuth()}});
-  go.onclick=async()=>{
-    err.textContent='';
-    try{
-      if(mode==='signup'){
-        if(!name.value.trim()){err.textContent='Escribe tu nombre.';return}
-        const c=await createUserWithEmailAndPassword(auth,email.value.trim(),pass.value);
-        await updateProfile(c.user,{displayName:name.value.trim().slice(0,50)});
-        state.user=auth.currentUser;renderAuth();render();
-      }else{
-        await signInWithEmailAndPassword(auth,email.value.trim(),pass.value);
-      }
-    }catch(e){
-      const m={'auth/email-already-in-use':'Ese correo ya tiene cuenta. Ingresa.','auth/weak-password':'La contraseña es muy corta.','auth/invalid-email':'Correo no válido.','auth/invalid-credential':'Correo o contraseña incorrectos.'};
-      err.textContent=m[e.code]||'No se pudo continuar. Intenta de nuevo.';
-    }
-  };
-  if(mode==='signup')f.append(name);
-  f.append(email,pass,err,el('div',{className:'row'},go,sw));
-  box.append(el('p',{textContent:'Para votar, crea tu cuenta o ingresa:'}),f);
-}
-
-function render(){
-  const counts={};letters.forEach(l=>counts[l]=[]);
-  Object.values(state.votes).forEach(v=>{if(counts[v.choice])counts[v.choice].push(v)});
-  let total=0,max=1;letters.forEach(l=>{total+=counts[l].length;max=Math.max(max,counts[l].length)});
-  res.replaceChildren();
-  const myId=state.user&&state.user.uid;
-  letters.forEach(l=>{
-    const n=counts[l].length;
-    const fill=el('div',{className:'fill'});fill.style.width=(n/max*100)+'%';
-    res.append(el('div',{className:'bar'},el('b',{textContent:l}),el('div',{className:'track'},fill),el('span',{textContent:n+(n===1?' voto':' votos')})));
-    const mine=!!(myId&&state.votes[myId]&&state.votes[myId].choice===l);
-    const b=el('button',{className:mine?'btn on':'btn',textContent:mine?'✅ Tu voto (toca para quitar)':'🗳️ Votar por '+l,disabled:!state.user||!state.ready,onclick:()=>castVote(l,mine)});
-    const who=el('span',{className:'who',textContent:n?counts[l].map(v=>v.name||'Alguien').join(', '):'Sin votos todavía'});
-    rows[l].replaceChildren(b,who);
-  });
-  res.append(el('p',{className:'sub',textContent:'Total: '+total+(total===1?' voto':' votos')}));
-}
-
-async function castVote(l,mine){
-  const u=state.user;if(!u)return;
-  const ref=doc(db,'votes',u.uid);
-  try{
-    if(mine)await deleteDoc(ref);
-    else await setDoc(ref,{choice:l,name:(u.displayName||'Anónimo').slice(0,50),at:Date.now()});
-  }catch(e){setInfo('No se pudo guardar tu voto. Intenta de nuevo.')}
-}
-
-renderAuth();render();
-if(firebaseConfig.apiKey==='REEMPLAZAR'){
-  setInfo('⚙️ Falta pegar la configuración de Firebase en el código (ver instrucciones).');
-}else{
-  const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);
-  let unsub=null;
-  onAuthStateChanged(auth,u=>{
-    state.user=u;renderAuth();
-    if(unsub){unsub();unsub=null}
-    state.votes={};state.ready=false;
-    if(!u){setInfo('Crea tu cuenta o ingresa para votar y ver los votos.');render();return}
-    unsub=onSnapshot(collection(db,'votes'),snap=>{
-      state.votes={};snap.forEach(d=>{state.votes[d.id]=d.data()});
-      state.ready=true;setInfo('Toca el botón de tu opción. Solo cuenta un voto por persona; puedes cambiarlo o quitarlo.');render();
-    },()=>setInfo('No se pudo leer la votación.'));
-  });
-}
-</script>
 </body>
 </html>
